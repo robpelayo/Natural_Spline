@@ -58,104 +58,61 @@ int main()
 {
   int    swidth, sheight ;
   double lowleftx, lowlefty, width, height ;
-  double x[10], y[10] ;
-  double numxy ;
-  double a[20], b[20] ;
-  double numab ;
-  double n, gap;
-
+  double p[100], x[100], y[100];
+  double X,Y ;
+  int num_of_points = 0;
+  double terms[100];
 
   // must do this before you do 'almost' any other graphical tasks 
-  // homework size 800x800
-  swidth = 800 ;  sheight = 800 ;
-  // scanf for double n (number of lines)
-  printf("Please enter n: ");
-  scanf("%lf", &n);
-  gap = swidth/n;
-  printf("%lf", gap);
+  swidth = 830 ;  sheight = 800 ;
   G_init_graphics (swidth,sheight) ;  // interactive graphics
-
 
   // clear the screen in a given color
   G_rgb (0.3, 0.3, 0.3) ; // dark gray
   G_clear () ;
-  for (int i=n; i > 0; i--){
-    gap * n
-    G_rgb (0.0, 1.0, 0.0) ; // green
-    G_line (0, 800 - (gap*i), 800-(gap*i), 0) ;
-  }
 
-  // draw a point
-  G_rgb (1.0, 0.0, 0.0) ; // red
-  G_point (200, 580) ; // hard to see
-
-
-  // draw a line
-  //G_rgb (0.0, 1.0, 0.0) ; // green
-  //G_line (0,0, swidth-1, sheight-1) ;
-
-
-  // aligned rectangles
+  // draw a different colored rectangle where if it is clicked, 
+  // the program will go forward
   G_rgb (0.0, 0.0, 1.0) ; // blue
-  lowleftx = 200 ; lowlefty = 50 ; width = 10 ; height = 30 ;
-  G_rectangle (lowleftx, lowlefty, width, height) ;
-  lowleftx = 250 ; 
+  lowleftx = 800; lowlefty = 0 ; width = 30 ; height = 799 ;
   G_fill_rectangle (lowleftx, lowlefty, width, height) ;
-
-
-  // triangles
-  G_rgb (1.0, 1.0, 0.0) ; // yellow
-  G_triangle (10, 300,  40,300,  60,250) ;
-  G_fill_triangle (10,100,  40,100,  60,150) ;
-
-
-  // circles   
-  G_rgb (1.0, 0.5, 0.0) ; // orange
-  G_circle (100, 300, 75) ;
-  G_fill_circle (370, 200, 50) ;
-
-
-  // polygons
-  G_rgb (0.0, 0.0, 0.0) ; // black
-  x[0] = 100 ;   y[0] = 100 ;
-  x[1] = 100 ;   y[1] = 300 ;
-  x[2] = 300 ;   y[2] = 300 ;
-  x[3] = 300 ;   y[3] = 100 ;
-  x[4] = 200 ;   y[4] = 175 ;
-  numxy = 5 ;
-  G_polygon (x,y,numxy) ;
-
-
-  G_rgb (0.4, 0.2, 0.1) ; // brown
-  a[0] = 300 ;   b[0] = 400 ;
-  a[1] = 350 ;   b[1] = 450 ;
-  a[2] = 275 ;   b[2] = 500 ;
-  a[3] = 125 ;   b[3] = 400 ;
-  numab = 4 ;
-  G_fill_polygon (a,b,numab) ;
-
-
-
-  //===============================================
-
-  double p[2], q[2] ;
-
+  
+  // Get all the points the user wants, terminate when they click above 
+  // 800 (blue bar)
+  G_rgb(1,1,0) ;
+  for(int i = 0; i < 100; ++i){
+    G_wait_click(p);
+    if (p[0] > 800)
+      break;
+    x[i] = p[0] ; y[i] = p[1];
+    G_fill_circle(x[i],y[i],2);
+    ++num_of_points;
+  }
+ 
+  // LaGrange mathy stuff
+  double top_product, bottom_product;
   G_rgb(1,0,0) ;
-
-  G_wait_click(p) ;
-  G_fill_circle(p[0],p[1],2) ;
-
-  G_wait_click(q) ;
-  G_fill_circle(q[0],q[1],2) ;   
-
-  G_rgb(0,1,0.5) ;
-  G_line(p[0],p[1], q[0],q[1]) ;
+  for (X = 0; X < 800; ++X){
+    Y = 0.0;
+    for (int i = 0; i < num_of_points; ++i){
+      // set = to 1, so we don't divide by 0
+      top_product = 1.0;
+      bottom_product = 1.0;
+      for (int j = 0; j < num_of_points; ++j){
+        // skip so we don't get a 0 in the denominator
+        if (j == i){
+          continue;
+        }
+        top_product *= (X - x[j]);
+        bottom_product *= (x[i] - x[j]); 
+      }
+      Y += y[i] * (top_product/bottom_product);
+    }
+    G_point(X,Y);
+  }
 
   int key ;   
   key =  G_wait_key() ; // pause so user can see results
 
-  G_save_image_to_file("demo.xwd") ;
+  G_save_image_to_file("three_point_quadratic.xwd") ;
 }
-
-
-
