@@ -1,56 +1,5 @@
-
-/*
-   FPToolkit.c : A simple set of graphical tools.
-   FPToolkitDemo.c 
-   Copyright (C) 2018  Ely
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License (version 3)
-   as published by the Free Software Foundation.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.
-   */
-
-
-
-
-
-/*
-
-   This code assumes an underlying X11 environment.
-
-   Most freshly installed unbuntu environments do not have
-   the X11 developr stuff they'll need to do graphics.
-   To download X11 developer stuff, connect to the internet and 
-   issue the following two commands.  Each will ask for your password
-   and each will take a few minutes.  At some point it might even
-   look like nothing is happening....be patient :
-
-   sudo  apt-get  install  libx11-dev     
-
-   sudo  apt-get  install  xorg-dev
-
-*/
-
-
-
-
-/*
-   If this file and the file, FPToolkit.c, are in the
-   same directory that you are trying to compile in,  
-   do the following :
-
-   cc  FPToolkitDemo.c   -lm  -lX11
-
-*/
-
-#include  "FPToolkit.c"
+#include "FPToolkit.c"
+#include <stdbool.h>
 
 #define M 20
 
@@ -69,92 +18,6 @@ void print_matrix (double m[M][M+1], int n)
   printf("\n") ;
 }
 
-int gaussian_elimination(double m[M][M+1], int n, double x[M])
-{
-  int i,j,k ;
-  double v,sum ;
-  int max_row,c ;
-
-  // reduce matrix to upper triangular form 
-
-  for (j = 0 ; j < n-1 ; j++) {
-
-    //print_matrix(m,n) ;
-
-    /*
-    // search from row j+1 down to find the largest magnitude
-    max_row = j ;
-    for (k = j+1 ; k < n ; k++) {
-    if (fabs(m[k][j]) > fabs(m[max_row][j])) { max_row = k ; }
-    }
-    if (max_row != j) {
-    // swap rows
-    for(c = j ; c <= n ; c++) {
-    v = m[j][c] ; m[j][c] = m[max_row][c] ; m[max_row][c] = v ;
-    }
-    }
-    */
-
-    if (m[j][j] == 0) return 0 ; 
-    // this now means there does not exist a unique soln
-    // have to think about this ...
-    // consider the subproblem underneath this
-    // it has either a unique soln, is inconsistent, or is underdetermined
-    // Now we are adding a new equation with 0*new_variable + ...old vars...
-    // Since 0 is multiplying the new_variable, we can view this
-    // as an extra equation being added to the subproblem which is
-    // already full of equations.  
-    // case 1: if the subproblem had a unique solution then this solution
-    //         either works or not with this added equation.  if it does
-    //         not work, then we have an inconsistent system
-    //         if it DOES work, then throwing the extra dimension in
-    //         creates an UNDERDETERMINED situation as any value of
-    //         xnew will still make things work
-    // case 2: the subproblem is inconsistent. so no set of values
-    //         of xsub can make the sub problem work and that will
-    //         still be true, so new system is also inconsistenet
-    // case 3: the subproblem is underdetermined.  throwing in the
-    //         new equation could create a unique solution in the
-    //         subspace but still leaves any choice for xnew so 
-    //         the larger system is still underdetermined
-
-
-
-    for (k = j+1 ; k < n ; k++) {
-
-      v = m[k][j] / m[j][j] ;
-      for (i = 0 ; i <= n ; i++) {
-        m[k][i] = m[k][i] - v*m[j][i] ;
-      }
-
-    }
-
-
-  }
-
-  // Output the upper triangular form
-  //print_matrix(m,n) ;
-
-
-  //////////////////////////////////////////////////////
-
-  // Now do the back substitution 
-  for (j = n - 1 ; j >= 0 ; j--) {
-
-    sum = 0.0 ;
-    for (k = j + 1 ; k < n ; k++) {
-      sum += (m[j][k] * x[k]) ;
-    }
-
-    if (m[j][j] == 0) return 0 ;
-
-    x[j] = (m[j][n] - sum)/m[j][j] ;
-  }
-
-  return 1 ;
-}
-
-
 int main()
 {
   int swidth, sheight;
@@ -164,9 +27,7 @@ int main()
   double X,Y ;
   int num_of_points = 0;
   double terms[100];
-  printf("What degree polynomial would you like? ");
-  scanf("%d", &degree);
-  printf("Degree: %d\n", degree);
+
   // must do this before you do 'almost' any other graphical tasks 
   swidth = 830 ;  sheight = 800 ;
   G_init_graphics (swidth,sheight) ;  // interactive graphics
@@ -193,49 +54,39 @@ int main()
     ++num_of_points;
   }
   G_rgb(1,0,0) ;
-
-  // Polynomial of best fit
+  
+  // intialize
   double matrix[M][M+1];
-  // stores the coefficients
-  double coefficients[degree+1];
-  double sum = 0.0;
-  for (int i = 0; i <= degree; ++i){
-    for (int j = 0; j <= degree +1; ++j){
-      // the last row, do the special sum(x^i*Y)
-      if (j == degree + 1){
-        for (int k = 0; k < num_of_points; ++k){
-          if (i == 0){
-            sum += y[k];
-          }
-          else
-            sum += y[k] * pow(x[k], i);
-        }
-        matrix[i][j] = sum;
-        sum = 0.0;
+  for (int i = 0; i < M; ++i)
+    for (int j = 0; j <= M; ++j)
+      matrix[i][j] = 0;
+  int num_of_vars = (num_of_points - 1) * 2;
+  int current = 0;
+  bool first = true;
+  // 6 points will yield 5 splines (10 variables)
+  // A and B are the line variables
+  // special cases
+  matrix[0][0] = 2;
+  matrix[0][1] = -2 * (x[current - 1] - x[current]);
+  matrix[0][num_of_vars] = 0;
+
+  for (int i = 1; i < num_of_vars; ++i){
+    for (int j = 0; j < num_of_vars + 1; ++j){
+      if (first){
+        
       }
-      else{
-        for (int k = 0; k < num_of_points; ++k){
-          sum += pow(x[k], j+i);
-        }
-        matrix[i][j] = sum;
-        sum = 0.0;
-      }
+      matrix[i][j] = 0;
     }
+
   }
 
-  // get the coefficient values 
-  int success = gaussian_elimination(matrix, degree+1, coefficients);
-  if (success == 0){
-    printf("Gaussian failed.\n");
-    return 0;
-  }
+  print_matrix(matrix, num_of_vars);
 
   // graph the function using Y = ax^0 + bx^1 + cx^2...
+  /*
   for (X = 0; X < 800; ++X){
-    Y = 0.0;
     for (int i = 0; i < degree +1; ++i){
       // get the Y value for the best fit
-      Y += pow(X, i) * coefficients[i];
     }
     G_point(X,Y);
   }
@@ -243,4 +94,5 @@ int main()
   key =  G_wait_key() ; // pause so user can see results
 
   G_save_image_to_file("Best_fit_poly.xwd") ;
+  */
 }
