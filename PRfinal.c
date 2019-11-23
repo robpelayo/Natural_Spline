@@ -164,11 +164,9 @@ int main()
   double X,Y ;
   int num_of_points = 0;
   double terms[100];
-  // use gline() maybe?
-  double oldX, oldY;
-     printf("What degree polynomial would you like? ");
-     scanf("%d", &degree);
-     printf("Degree: %d\n", degree);
+  printf("What degree polynomial would you like? ");
+  scanf("%d", &degree);
+  printf("Degree: %d\n", degree);
   // must do this before you do 'almost' any other graphical tasks 
   swidth = 830 ;  sheight = 800 ;
   G_init_graphics (swidth,sheight) ;  // interactive graphics
@@ -182,54 +180,37 @@ int main()
   G_rgb (0.0, 0.0, 1.0) ; // blue
   lowleftx = 800; lowlefty = 0 ; width = 30 ; height = 799 ;
   G_fill_rectangle (lowleftx, lowlefty, width, height) ;
+
   // Get all the points the user wants, terminate when they click above 
   // 800 (blue bar)
   G_rgb(1,1,0) ;
   for(int i = 0; i < 100; ++i){
-  G_wait_click(p);
-  if (p[0] > 800)
-  break;
-  x[i] = p[0] ; y[i] = p[1];
-  G_fill_circle(x[i],y[i],2);
-  ++num_of_points;
+    G_wait_click(p);
+    if (p[0] > 800)
+      break;
+    x[i] = p[0] ; y[i] = p[1];
+    G_fill_circle(x[i],y[i],2);
+    ++num_of_points;
   }
   G_rgb(1,0,0) ;
-  /*
-  int num_of_points = 4;
-  degree = 2;
-  // (3,4) 
-  x[0] = 3;
-  y[0] = 4;
-  // (4,6)
-  x[1] = 4;
-  y[1] = 6;
-  // (6,5)
-  x[2] = 6;
-  y[2] = 5;
-  // (7,8);
-  x[3] = 7;
-  y[3] = 8;
-*/
+
   // Polynomial of best fit
   double matrix[M][M+1];
+  // stores the coefficients
   double coefficients[degree+1];
-  int first_term_power = 0;
   double sum = 0.0;
-  matrix[degree][degree+1] = 999;
   for (int i = 0; i <= degree; ++i){
     for (int j = 0; j <= degree +1; ++j){
+      // the last row, do the special sum(x^i*Y)
       if (j == degree + 1){
         for (int k = 0; k < num_of_points; ++k){
           if (i == 0){
             sum += y[k];
-            //printf("sum: %lf\n", sum);
           }
           else
             sum += y[k] * pow(x[k], i);
-          //printf("(%lf,%lf) ", x[k], y[k]);
         }
         matrix[i][j] = sum;
-        //printf("matrix[%i][%i] = %lf\n", i, j, sum);
         sum = 0.0;
       }
       else{
@@ -237,32 +218,25 @@ int main()
           sum += pow(x[k], j+i);
         }
         matrix[i][j] = sum;
-        //printf("matrix[%i][%i] = %lf\n", i, j, sum);
         sum = 0.0;
       }
     }
   }
-  print_matrix (matrix, degree +1);
+
+  // get the coefficient values 
   int success = gaussian_elimination(matrix, degree+1, coefficients);
-  printf("\nCoefficients array:\n");
-  for(int i = 0; i <= degree; ++i){
-    printf("%lf ", coefficients[i]);
+  if (success == 0){
+    printf("Gaussian failed.\n");
+    return 0;
   }
-  printf("\n");
 
-
+  // graph the function using Y = ax^0 + bx^1 + cx^2...
   for (X = 0; X < 800; ++X){
     Y = 0.0;
     for (int i = 0; i < degree +1; ++i){
+      // get the Y value for the best fit
       Y += pow(X, i) * coefficients[i];
     }
-    /*
-    oldX = X;
-    oldY = Y;
-    if (X == 0)
-      continue;
-    G_line(oldX, oldY, X, Y);
-    */
     G_point(X,Y);
   }
   int key ;   
