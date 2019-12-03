@@ -18,6 +18,91 @@ void print_matrix (double m[M][M+1], int n)
   printf("\n") ;
 }
 
+int gaussian_elimination(double m[M][M+1], int n, double x[M])
+{
+  int i,j,k ;
+  double v,sum ;
+  int max_row,c ;
+
+  // reduce matrix to upper triangular form 
+
+  for (j = 0 ; j < n-1 ; j++) {
+
+    //print_matrix(m,n) ;
+
+    /*
+    // search from row j+1 down to find the largest magnitude
+    max_row = j ;
+    for (k = j+1 ; k < n ; k++) {
+    if (fabs(m[k][j]) > fabs(m[max_row][j])) { max_row = k ; }
+    }
+    if (max_row != j) {
+    // swap rows
+    for(c = j ; c <= n ; c++) {
+    v = m[j][c] ; m[j][c] = m[max_row][c] ; m[max_row][c] = v ;
+    }
+    }
+    */
+
+    if (m[j][j] == 0) return 0 ; 
+    // this now means there does not exist a unique soln
+    // have to think about this ...
+    // consider the subproblem underneath this
+    // it has either a unique soln, is inconsistent, or is underdetermined
+    // Now we are adding a new equation with 0*new_variable + ...old vars...
+    // Since 0 is multiplying the new_variable, we can view this
+    // as an extra equation being added to the subproblem which is
+    // already full of equations.  
+    // case 1: if the subproblem had a unique solution then this solution
+    //         either works or not with this added equation.  if it does
+    //         not work, then we have an inconsistent system
+    //         if it DOES work, then throwing the extra dimension in
+    //         creates an UNDERDETERMINED situation as any value of
+    //         xnew will still make things work
+    // case 2: the subproblem is inconsistent. so no set of values
+    //         of xsub can make the sub problem work and that will
+    //         still be true, so new system is also inconsistenet
+    // case 3: the subproblem is underdetermined.  throwing in the
+    //         new equation could create a unique solution in the
+    //         subspace but still leaves any choice for xnew so 
+    //         the larger system is still underdetermined
+
+
+
+    for (k = j+1 ; k < n ; k++) {
+
+      v = m[k][j] / m[j][j] ;
+      for (i = 0 ; i <= n ; i++) {
+        m[k][i] = m[k][i] - v*m[j][i] ;
+      }
+
+    }
+
+
+  }
+
+  // Output the upper triangular form
+  //print_matrix(m,n) ;
+
+
+  //////////////////////////////////////////////////////
+
+  // Now do the back substitution 
+  for (j = n - 1 ; j >= 0 ; j--) {
+
+    sum = 0.0 ;
+    for (k = j + 1 ; k < n ; k++) {
+      sum += (m[j][k] * x[k]) ;
+    }
+
+    if (m[j][j] == 0) return 0 ;
+
+    x[j] = (m[j][n] - sum)/m[j][j] ;
+  }
+
+  return 1 ;
+}
+
 int main()
 {
   int swidth, sheight;
@@ -27,7 +112,7 @@ int main()
   double X,Y ;
   int num_of_points = 0;
   double terms[100];
-  /*(
+
   // must do this before you do 'almost' any other graphical tasks 
   swidth = 830 ;  sheight = 800 ;
   G_init_graphics (swidth,sheight) ;  // interactive graphics
@@ -53,21 +138,21 @@ int main()
     ++num_of_points;
   }
   G_rgb(1,0,0) ;
-  */
-  
+ 
   // intialize
   double matrix[M][M+1];
   for (int i = 0; i < M; ++i)
     for (int j = 0; j <= M; ++j)
       matrix[i][j] = 0;
-  num_of_points = 5;
+  //num_of_points = 5;
   int num_of_vars = (num_of_points - 1) * 2;
+  double coefficients[num_of_vars];
   int current = 1;
   int start = 0;
   bool first = true;
   // 6 points will yield 5 splines (10 variables) so 11 columns
   // A and B are the line variables
-
+  /*
   // (3,4)
   x[0] = 3;
   y[0] = 4;
@@ -83,6 +168,7 @@ int main()
   // (9,10)
   x[4] = 9;
   y[4] = 10;
+  */
 
   matrix[0][0] = 2;
   matrix[0][1] = -2 * (x[1] - x[0]);
@@ -95,23 +181,23 @@ int main()
       if (first){
         if (j == start){
           matrix[i][j] = x[current] - x[current-1];
-          printf("x[%i]: %lf   x[%i]: %lf\n", current, x[current], current-1, x[current-1]);
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("x[%i]: %lf   x[%i]: %lf\n", current, x[current], current-1, x[current-1]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else if (j == start + 1){
           matrix[i][j] = pow(x[current] - x[current-1], 2);
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else if (j == start + 2){
           matrix[i][j] = x[current+1] - x[current];
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else if (j == num_of_vars){
           matrix[i][j] = ((y[current+1]-y[current])/(x[current+1]-x[current])) - ((y[current]-y[current-1])/(x[current]-x[current-1]));
-          printf("endmatrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("endmatrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else{
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
           continue;
         }
       }
@@ -119,22 +205,22 @@ int main()
       else{
         if (j == start){
           matrix[i][j] = pow(x[current] - x[current-1], 2);
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else if (j == start + 1){
           matrix[i][j] = -(x[current + 1] - x[current -1]);
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else if (j == start + 2){
           matrix[i][j] = (x[current] - x[current -1]) * (x[current +1] - x[current]);
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else if (j == num_of_vars){
           matrix[i][j] = -matrix[i-1][j];
-          printf("endmatrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("endmatrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
         }
         else 
-          printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
+          //printf("matrix[%i][%i]: %lf\n", i, j, matrix[i][j]);
           continue;
       }
     }
@@ -150,18 +236,44 @@ int main()
   matrix[num_of_vars-1][num_of_vars-1] = -2 * (x[num_of_points-1] - x[num_of_points-2]);
   matrix[num_of_vars-1][num_of_vars] = 0;
   print_matrix(matrix, num_of_vars);
+  // coefficients now stored in matrix 'coefficients'
+  int success = gaussian_elimination(matrix, num_of_vars, coefficients);
+  if (success == 0){
+    printf("Gaussian failed.\n");
+    return 0;
+  }
+
+  for (int i = 0; i < num_of_points; ++i)
+    printf("x[%i]: %lf\n", i, x[i]);
 
   // graph the function using Y = ax^0 + bx^1 + cx^2...
-  /*
+  current = 0;
+  int coeff_current = 0;
+  //int check = (int)x[current+1];
+  //printf("Check:%i\n", check);
   for (X = 0; X < 800; ++X){
-    for (int i = 0; i < degree +1; ++i){
-      // get the Y value for the best fit
+    if(X > x[0]){
+      // last point
+      if (X > x[num_of_points-1])
+      {
+        printf("Breaking\n");
+        break;
+      }
+      Y = y[current] + 
+        ((y[current+1]-y[current])/(x[current+1]-x[current]))*(X-x[current]) + 
+        (coefficients[coeff_current]*(X-x[current])*(X-x[current+1])) + 
+        (coefficients[coeff_current+1]*pow(X-x[current],2)*(X-x[current+1]));
+      //printf("(%.2f, %.2f\n)", X, Y);
+      G_point(X,Y);
+      if(X == x[current+1]){
+        printf("ENTERED CHECK\n\n");
+        ++current;
+        coeff_current+=2;
+      }
     }
-    G_point(X,Y);
   }
+  printf("Current:%i\n", current);
   int key ;   
   key =  G_wait_key() ; // pause so user can see results
-
-  G_save_image_to_file("Best_fit_poly.xwd") ;
-  */
+  //G_save_image_to_file("Best_fit_poly.xwd") ;
 }
