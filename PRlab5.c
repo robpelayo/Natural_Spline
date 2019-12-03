@@ -203,16 +203,12 @@ int main()
   matrix[num_of_vars-1][num_of_vars-2] = 1;
   matrix[num_of_vars-1][num_of_vars-1] = -2 * (x[num_of_points-1] - x[num_of_points-2]);
   matrix[num_of_vars-1][num_of_vars] = 0;
-  print_matrix(matrix, num_of_vars);
   // coefficients now stored in matrix 'coefficients'
   int success = gaussian_elimination(matrix, num_of_vars, coefficients);
   if (success == 0){
     printf("Gaussian failed.\n");
     return 0;
   }
-
-  for (int i = 0; i < num_of_points; ++i)
-    printf("x[%i]: %lf\n", i, x[i]);
 
   current = 0;
   int coeff_current = 0;
